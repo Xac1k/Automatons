@@ -1,0 +1,10 @@
+type: moore
+start: S0
+
+states:
+S0 | Состояние_0 / Выход_A
+S1 | Состояние_1 / Выход_B
+
+transitions:
+S0 S1 Сигнал_1
+S1 S0 Сигнал_2
