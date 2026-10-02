@@ -28,7 +28,7 @@ std::map<std::string, MealyCellPayload> CreateNewNameOfStates(const std::set<Mea
     return associatedNameStates;
 }
 
-std::optional<std::string> GetNewNameByPayload(std::map<std::string, MealyCellPayload> newHeaders, const MealyCellPayload& payload) {
+std::optional<std::string> GetNewNameByPayload(const std::map<std::string, MealyCellPayload>& newHeaders, const MealyCellPayload& payload) {
     for ( const auto& [newName, prevPayload] : newHeaders ) {
         if (prevPayload == payload) {
             return newName;
@@ -37,7 +37,7 @@ std::optional<std::string> GetNewNameByPayload(std::map<std::string, MealyCellPa
     return std::nullopt;
 }
 
-MooreTable CreateMooreTable(std::map<std::string, MealyCellPayload> newHeaders, MealyTable& table) {
+MooreTable CreateMooreTable(const std::map<std::string, MealyCellPayload>& newHeaders, MealyTable& table) {
     const auto columnIDs = table.GetColumnIDs();
     const auto rowIDs = table.GetColumnByID(columnIDs.at(0)).column.GetRowIDs();
 

@@ -1,6 +1,10 @@
 #include "src/Minimize/Moore/Minimize.h"
 #include "src/Minimize/Mealy/Minimize.h"
+#include "src/MealyToMoore/MealyToMoore.h"
 #include "src/MooreToMealy/MooreToMealy.h"
+#include "src/New/From/From.h"
+#include "src/New/Print/Print.h"
+#include "src/Old/Parse/Parse.h"
 
 MooreTable CreateTestMooreTable() {
     MooreTable table;
@@ -237,7 +241,57 @@ MealyTable CreateTestMealyTable() {
 }
 
 int main() {
-    auto table = CreateTestMooreTable();
-    auto minimizedTable = Minimize(table);
-    auto transformed = Moore2Mealy(minimizedTable);
+    auto moore = MooreParse(R"(type: moore
+start: 1
+
+states:
+1 | 1 / Y1
+2 | 2 / Y1
+3 | 3 / Y3
+4 | 4 / Y3
+5 | 5 / Y3
+6 | 6 / Y2
+7 | 7 / Y3
+8 | 8 / Y1
+9 | 9 / Y2
+10 | 10 / Y2
+11 | 11 / Y2
+12 | 12 / Y2
+
+transitions:
+1 10 X1
+1 5 X2
+2 12 X1
+2 7 X2
+3 5 X1
+3 6 X2
+4 7 X1
+4 11 X2
+5 3 X1
+5 9 X2
+6 7 X1
+6 11 X2
+7 3 X1
+7 6 X2
+8 10 X1
+8 4 X2
+9 7 X1
+9 6 X2
+10 1 X1
+10 8 X2
+11 5 X1
+11 9 X2
+12 2 X1
+12 8 X2)");
+
+    auto mooreTable = From(moore);
+    auto mealyTable = Moore2Mealy(mooreTable);
+    auto minimizedMealy = Minimize(mealyTable);
+    Print(minimizedMealy);
+
+    auto mooreTable2 = Mealy2Moore(minimizedMealy);
+    auto minimizedMoore2 = Minimize(mooreTable2);
+    Print(minimizedMoore2);
 }
+
+//13

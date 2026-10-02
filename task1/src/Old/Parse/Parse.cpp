@@ -18,13 +18,18 @@ AutomatonMealy MealyParse(const std::string& text) {
 
     std::smatch automatonMatch;
     if (std::regex_search(text, automatonMatch, mealyRegex)) {
-        automaton.startStateID = automatonMatch[2].str();
+        auto startStateID = automatonMatch[2].str();
+        automaton.startStateID = startStateID;
         auto transitions = automatonMatch[3].str();
         Trim(transitions);
 
         std::string lineTransition;
         std::istringstream transitionsInput(transitions);
         while (std::getline(transitionsInput, lineTransition)) {
+            Trim(lineTransition);
+            if (lineTransition.empty()) {
+                continue;
+            }
             std::smatch transitionMatch;
             std::regex_search(lineTransition, transitionMatch, mealyTransitionRegex);
 
@@ -69,6 +74,10 @@ AutomatonMoore MooreParse(const std::string& text) {
         std::string lineState;
         std::istringstream stateInput(states);
         while (std::getline(stateInput, lineState, '\n')) {
+            Trim(lineState);
+            if (lineState.empty()) {
+                continue;
+            }
             std::smatch stateMatch;
             std::regex_search(lineState, stateMatch, mooreStateRegex);
 
@@ -83,6 +92,10 @@ AutomatonMoore MooreParse(const std::string& text) {
         std::string lineTransition;
         std::istringstream transitionsInput(transitions);
         while (std::getline(transitionsInput, lineTransition)) {
+            Trim(lineTransition);
+            if (lineTransition.empty()) {
+                continue;
+            }
             std::smatch transitionMatch;
             std::regex_search(lineTransition, transitionMatch, mooreTransitionRegex);
 

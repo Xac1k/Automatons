@@ -27,27 +27,6 @@ struct AutomatonMoore {
     std::vector<Transition> transitions;
 };
 
-struct MooreCell {
-    std::string newNodeID;
-};
-
-struct MooreToMealyHeader {
-    std::string startNodeID;
-    std::string newNodeID;
-    std::string output;
-
-    auto operator<=>(const MooreToMealyHeader& other) const {
-        return std::tie(startNodeID, output)
-            <=> std::tie(other.startNodeID, other.output);
-    }
-};
-
-struct MooreTable {
-    std::vector<MooreToMealyHeader> headers;
-    std::vector<std::string> columns;
-    std::vector<MooreCell> cells;
-};
-
 struct AutomatonMealy {
     struct Transitions {
         std::string startID;
@@ -59,15 +38,4 @@ struct AutomatonMealy {
 
     std::string startStateID;
     std::vector<Transitions> transitions;
-};
-
-struct MealyCell {
-    std::string endID;
-    std::string output;
-};
-
-struct MealyTable {
-    std::vector<std::string> headers;
-    std::vector<std::string> columns;
-    std::vector<MealyCell> cells;
 };
