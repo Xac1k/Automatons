@@ -13,8 +13,9 @@ MealyTable Moore2Mealy(MooreTable& table) {
         for (const auto& rowID : rowIDs) {
             MealyCellPayload cellPayload;
             auto fromRow = fromColumn.column.GetRowByID(rowID);
+            auto targetColumn = table.GetColumnByID(fromRow.toColumnID);
 
-            cellPayload.outputSignal = fromColumn.payload.outputSignal;
+            cellPayload.outputSignal = targetColumn.payload.outputSignal;
             cellPayload.toColumnID = fromRow.toColumnID;
 
             columnData.column.AddNewRow(rowID, cellPayload);

@@ -1,3 +1,6 @@
+#include <iostream>
+#include <ostream>
+
 #include "src/Minimize/Moore/Minimize.h"
 #include "src/Minimize/Mealy/Minimize.h"
 #include "src/MealyToMoore/MealyToMoore.h"
@@ -241,57 +244,52 @@ MealyTable CreateTestMealyTable() {
 }
 
 int main() {
-    auto moore = MooreParse(R"(type: moore
+    auto mealy = MealyParse(R"(type: mealy
 start: 1
 
-states:
-1 | 1 / Y1
-2 | 2 / Y1
-3 | 3 / Y3
-4 | 4 / Y3
-5 | 5 / Y3
-6 | 6 / Y2
-7 | 7 / Y3
-8 | 8 / Y1
-9 | 9 / Y2
-10 | 10 / Y2
-11 | 11 / Y2
-12 | 12 / Y2
-
 transitions:
-1 10 X1
-1 5 X2
-2 12 X1
-2 7 X2
-3 5 X1
-3 6 X2
-4 7 X1
-4 11 X2
-5 3 X1
-5 9 X2
-6 7 X1
-6 11 X2
-7 3 X1
-7 6 X2
-8 10 X1
-8 4 X2
-9 7 X1
-9 6 X2
-10 1 X1
-10 8 X2
-11 5 X1
-11 9 X2
-12 2 X1
-12 8 X2)");
+1 10 Z1 / Y1
+1 5 Z2 / Y2
+2 12 Z1 / Y1
+2 8 Z2 / Y2
+3 5 Z1 / Y2
+3 6 Z2 / Y1
+4 7 Z1 / Y2
+4 11 Z2 / Y1
+5 3 Z1 / Y1
+5 9 Z2 / Y2
+6 7 Z1 / Y2
+6 11 Z2 / Y1
+7 3 Z1 / Y1
+7 6 Z2 / Y2
+8 10 Z1 / Y1
+8 4 Z2 / Y2
+9 7 Z1 / Y2
+9 6 Z2 / Y1
+10 1 Z1 / Y2
+10 8 Z2 / Y1
+11 5 Z1 / Y2
+11 9 Z2 / Y1
+12 2 Z1 / Y2
+12 8 Z2 / Y1)");
 
-    auto mooreTable = From(moore);
-    auto mealyTable = Moore2Mealy(mooreTable);
+    auto mealyTable = From(mealy);
+
     auto minimizedMealy = Minimize(mealyTable);
-    Print(minimizedMealy);
 
-    auto mooreTable2 = Mealy2Moore(minimizedMealy);
-    auto minimizedMoore2 = Minimize(mooreTable2);
-    Print(minimizedMoore2);
+    auto mooreTable = Mealy2Moore(mealyTable);
+    std::cout << "MealyTable -> MooreTable" << std::endl;
+    PrintTable(mooreTable);
+
+    auto minimizedMoore = Minimize(mooreTable);
+    std::cout << "\n\n\nMealyTable -> MooreTable -> MinimizedMooreTable" << std::endl;
+    PrintTable(minimizedMoore);
+
+    auto mealyTable2 = Moore2Mealy(minimizedMoore);
+    auto minimizedMealy2 = Minimize(mealyTable2);
+
+    std::cout << "\n\n\nMealyTable -> MinimizedMealyTable" << std::endl;
+    PrintTable(minimizedMealy);
+    std::cout << "\n\n\nMealyTable -> MooreTable -> MinimizedMooreTable -> MealyTable2 -> MinimizedMealyTable2" << std::endl;
+    PrintTable(minimizedMealy2);
 }
-
-//13

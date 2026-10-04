@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <map>
 #include <string>
 #include <unordered_map>
@@ -36,6 +37,12 @@ public:
         for (const auto& [rowID, _] : rows) {
             rowIDs.push_back(rowID);
         }
+        std::ranges::sort(rowIDs, [](const std::string& first, const std::string& second) {
+            if (first.length() != second.length()) {
+                return first.length() < second.length();
+            }
+            return first < second;
+        });
         return rowIDs;
     }
 
@@ -78,6 +85,12 @@ public:
         for (const auto& [columnID, _] : columns) {
             columnIDs.push_back(columnID);
         }
+        std::ranges::sort(columnIDs, [](const std::string& first, const std::string& second) {
+            if (first.length() != second.length()) {
+                return first.length() < second.length();
+            }
+            return first < second;
+        });
         return columnIDs;
     }
 

@@ -2,7 +2,12 @@
 #include "../../New/MinimizationTable/MinimizationTable.h"
 #include <stdexcept>
 #include <algorithm>
+#include <iostream>
+#include <limits>
+#include <ostream>
 #include <set>
+
+#include "../../New/Print/Print.h"
 
 namespace {
     constexpr int UNSET_EQUIVALENCE_CLASS = -1;
@@ -89,18 +94,16 @@ namespace {
                     sectors.push_back({otherColumnID});
                     treatedColumns.push_back(otherColumnID);
                 }
-
-
             }
         }
 
         return sectors;
     }
 
-    std::unordered_map<MealyTable::ColumnID, int> CreateTableOfInitialEquivalenceClasses(MealyTable& mealyTable) {
+    std::map<MealyTable::ColumnID, int> CreateTableOfInitialEquivalenceClasses(MealyTable& mealyTable) {
         const auto sectors = SplitOntoSectorsOfEquivalenceClasses(mealyTable);
 
-        std::unordered_map<MealyTable::ColumnID, int> columnIDToEquivalenceClass;
+        std::map<MealyTable::ColumnID, int> columnIDToEquivalenceClass;
         for (int equivalenceClass = 0; equivalenceClass < sectors.size(); ++equivalenceClass) {
             auto equivalenceClassIDs = sectors.at(equivalenceClass );
             for (const auto& columnID : equivalenceClassIDs) {
@@ -133,6 +136,66 @@ namespace {
         return minimizationTable;
     }
 
+    void SwapMinimizationTableEquivalenceClass(
+        MinimizationTable& minimizationTable,
+        const int from,
+        const int to
+    ) {
+        auto columnIDs = minimizationTable.GetColumnIDs();
+
+        for (const auto& columnID: columnIDs) {
+            auto& column = minimizationTable.GetColumnByID(columnID);
+
+            if (column.payload.equivalenceClass == from) {
+                column.payload.equivalenceClass = to;
+            } else if (column.payload.equivalenceClass == to) {
+                column.payload.equivalenceClass = from;
+            }
+        }
+    }
+
+    void RenumberEquivalenceClassesInAscendingOrderOfColumns(MinimizationTable& minimizationTable) {
+        std::vector<std::pair<MinimizationTable::ColumnID, int*>> reorderedMap;
+
+        auto columnIDs = minimizationTable.GetColumnIDs();
+        for (const auto& columnID: columnIDs) {
+            auto& column = minimizationTable.GetColumnByID(columnID);
+            reorderedMap.emplace_back(columnID, &column.payload.equivalenceClass);
+        }
+
+        std::ranges::sort(reorderedMap, [](auto& first, auto& second) {
+            if (first.first.length() != second.first.length()) {
+                return first.first.length() < second.first.length();
+            }
+            return first.first < second.first;
+        });
+
+        std::vector<int> treatedEquivalenceClass{};
+        std::map<int, int> remapEquivalenceClass{};
+        for (size_t i = 0; i < reorderedMap.size(); ++i) {
+            const auto& curr = reorderedMap.at(i);
+
+            if (std::ranges::find(treatedEquivalenceClass, *curr.second) != treatedEquivalenceClass.end()) {
+                continue;
+            }
+
+            if (treatedEquivalenceClass.empty()) {
+                auto value = std::ranges::min(reorderedMap, [] (auto& first, auto& second) {
+                    return *first.second < *second.second;
+                });
+                treatedEquivalenceClass.push_back(*value.second);
+            }
+
+            auto expectedNextEquivalenceClass = std::ranges::max(treatedEquivalenceClass) + 1;
+            if (*curr.second > expectedNextEquivalenceClass) {
+                SwapMinimizationTableEquivalenceClass(minimizationTable, *curr.second, expectedNextEquivalenceClass);
+                treatedEquivalenceClass.push_back(expectedNextEquivalenceClass);
+            } else if (std::ranges::find(treatedEquivalenceClass, *curr.second) == treatedEquivalenceClass.end()) {
+                treatedEquivalenceClass.push_back(*curr.second);
+            }
+        }
+    }
+
     bool UpdateValuesOfEquivalenceClassInCells(MinimizationTable& minimizationTable, MealyTable& mealyTable) {
         const auto columnIDs = mealyTable.GetColumnIDs();
         const auto rowIDs = mealyTable.GetColumnByID(columnIDs.at(0)).column.GetRowIDs();
@@ -158,6 +221,7 @@ namespace {
             }
         }
 
+        RenumberEquivalenceClassesInAscendingOrderOfColumns(minimizationTable);
         return updated;
     }
 
@@ -265,6 +329,7 @@ namespace {
 
             SplitSectorsInEquivalenceClasses(minimizationTable, sectors);
         }
+        RenumberEquivalenceClassesInAscendingOrderOfColumns(minimizationTable);
     }
 
     std::optional<MinimizationTable::TableColumnData> GetInstanceOfEquivalenceClass(MinimizationTable& minimizationTable, int equivalenceClass) {
@@ -318,9 +383,10 @@ namespace {
 MealyTable Minimize(MealyTable table) {
     auto minimizationTable = CreateEmptyMinimizationTable(table);
     while (UpdateValuesOfEquivalenceClassInCells(minimizationTable, table)) {
+        // std::cout << "\n\n\n Вывод внутри Minimize: \n";
+        // PrintTable(minimizationTable);
         CheckEquivalenceMatrixAndSplit(minimizationTable);
     }
 
-    auto minimizedTable = CreateMinimizedTable(minimizationTable, table);
-    return minimizedTable;
+    return CreateMinimizedTable(minimizationTable, table);
 }

@@ -1,7 +1,7 @@
 #include "MealyToMoore.h"
 #include <set>
 
-std::set<MealyCellPayload> GetUniqueStates(MealyTable& table) {
+std::vector<MealyCellPayload> GetUniqueStates(MealyTable& table) {
     const auto columnIDs = table.GetColumnIDs();
     const auto rowIDs = table.GetColumnByID(columnIDs.at(0)).column.GetRowIDs();
 
@@ -14,13 +14,34 @@ std::set<MealyCellPayload> GetUniqueStates(MealyTable& table) {
             mooreTableHeaders.insert(row);
         }
     }
+    std::vector orderedHeaders(mooreTableHeaders.begin(), mooreTableHeaders.end());
 
-    return mooreTableHeaders;
+    std::ranges::sort(orderedHeaders, [](auto& first, auto& second) {
+        if (first.toColumnID.length() != second.toColumnID.length()) {
+            if (first.toColumnID == second.toColumnID) {
+                if (first.outputSignal.length() != second.outputSignal.length()) {
+                    return first.outputSignal.length() < second.outputSignal.length();
+                }
+                return first.outputSignal < second.outputSignal;
+            }
+            return first.toColumnID.length() < second.toColumnID.length();
+        }
+
+        if (first.toColumnID == second.toColumnID) {
+            if (first.outputSignal.length() != second.outputSignal.length()) {
+                return first.outputSignal.length() < second.outputSignal.length();
+            }
+            return first.outputSignal < second.outputSignal;
+        }
+        return first.toColumnID < second.toColumnID;
+    });
+
+    return orderedHeaders;
 }
 
-std::map<std::string, MealyCellPayload> CreateNewNameOfStates(const std::set<MealyCellPayload>& mooreHeaders) {
+std::map<std::string, MealyCellPayload> CreateNewNameOfStates(const std::vector<MealyCellPayload>& mooreHeaders) {
     std::map<std::string, MealyCellPayload> associatedNameStates;
-    size_t iter = 0;
+    size_t iter = 1;
     for (const auto& header : mooreHeaders) {
         associatedNameStates.emplace("Z" + std::to_string(iter++), header);
     }
@@ -46,6 +67,7 @@ MooreTable CreateMooreTable(const std::map<std::string, MealyCellPayload>& newHe
         MooreTable::TableColumnData columnData;
         columnData.payload.outputSignal = payload.outputSignal;
         columnData.payload.stateID = payload.toColumnID;
+        columnData.payload.equivalenceClass = 0;
 
         for (const auto& rowID : rowIDs ) {
             auto row = table.GetColumnByID(payload.toColumnID).column.GetRowByID(rowID);

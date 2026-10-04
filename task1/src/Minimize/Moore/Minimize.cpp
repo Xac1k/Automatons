@@ -1,7 +1,11 @@
 #include <stdexcept>
 #include <algorithm>
 #include "Minimize.h"
+
+#include <iostream>
+
 #include "../../New/MinimizationTable/MinimizationTable.h"
+
 namespace {
     constexpr int UNSET_EQUIVALENCE_CLASS = -1;
 
@@ -11,7 +15,7 @@ namespace {
         //Определяем начальные классы эквивалетности
         std::unordered_map<MooreTable::OutputSignal, std::vector<MooreTable::ColumnID>> uniqueOutputsSignal;
         std::unordered_map<MooreTable::OutputSignal, int> signalToEquivalenceClass;
-        int equivalenceClassIter = 0;
+        int equivalenceClassIter = 1;
         for (const auto& columnID : columnIDs) {
             const auto outputSignal = mooreTable.GetColumnByID(columnID).payload.outputSignal;
             auto it = uniqueOutputsSignal.find(outputSignal);
@@ -56,6 +60,66 @@ namespace {
         return minimizationTable;
     }
 
+    void SwapMinimizationTableEquivalenceClass(
+        MinimizationTable& minimizationTable,
+        const int from,
+        const int to
+    ) {
+        auto columnIDs = minimizationTable.GetColumnIDs();
+
+        for (const auto& columnID: columnIDs) {
+            auto& column = minimizationTable.GetColumnByID(columnID);
+
+            if (column.payload.equivalenceClass == from) {
+                column.payload.equivalenceClass = to;
+            } else if (column.payload.equivalenceClass == to) {
+                column.payload.equivalenceClass = from;
+            }
+        }
+    }
+
+    void RenumberEquivalenceClassesInAscendingOrderOfColumns(MinimizationTable& minimizationTable) {
+        std::vector<std::pair<MinimizationTable::ColumnID, int*>> reorderedMap;
+
+        auto columnIDs = minimizationTable.GetColumnIDs();
+        for (const auto& columnID: columnIDs) {
+            auto& column = minimizationTable.GetColumnByID(columnID);
+            reorderedMap.emplace_back(columnID, &column.payload.equivalenceClass);
+        }
+
+        std::ranges::sort(reorderedMap, [](auto& first, auto& second) {
+            if (first.first.length() != second.first.length()) {
+                return first.first.length() < second.first.length();
+            }
+            return first.first < second.first;
+        });
+
+        std::vector<int> treatedEquivalenceClass{};
+        std::map<int, int> remapEquivalenceClass{};
+        for (size_t i = 0; i < reorderedMap.size(); ++i) {
+            const auto& curr = reorderedMap.at(i);
+
+            if (std::ranges::find(treatedEquivalenceClass, *curr.second) != treatedEquivalenceClass.end()) {
+                continue;
+            }
+
+            if (treatedEquivalenceClass.empty()) {
+                auto value = std::ranges::min(reorderedMap, [] (auto& first, auto& second) {
+                    return *first.second < *second.second;
+                });
+                treatedEquivalenceClass.push_back(*value.second);
+            }
+
+            auto expectedNextEquivalenceClass = std::ranges::max(treatedEquivalenceClass) + 1;
+            if (*curr.second > expectedNextEquivalenceClass) {
+                SwapMinimizationTableEquivalenceClass(minimizationTable, *curr.second, expectedNextEquivalenceClass);
+                treatedEquivalenceClass.push_back(expectedNextEquivalenceClass);
+            } else if (std::ranges::find(treatedEquivalenceClass, *curr.second) == treatedEquivalenceClass.end()) {
+                treatedEquivalenceClass.push_back(*curr.second);
+            }
+        }
+    }
+
     bool UpdateValuesOfEquivalenceClassInCells(MinimizationTable& minimizationTable, MooreTable& mooreTable) {
         const auto columnIDs = mooreTable.GetColumnIDs();
         const auto rowIDs = mooreTable.GetColumnByID(columnIDs.at(0)).column.GetRowIDs();
@@ -81,6 +145,7 @@ namespace {
             }
         }
 
+        RenumberEquivalenceClassesInAscendingOrderOfColumns(minimizationTable);
         return updated;
     }
 
@@ -203,6 +268,7 @@ namespace {
 
             SplitSectorsInEquivalenceClasses(minimizationTable, sectors);
         }
+        RenumberEquivalenceClassesInAscendingOrderOfColumns(minimizationTable);
     }
 
     std::optional<MinimizationTable::TableColumnData> GetInstanceOfEquivalenceClass(MinimizationTable& minimizationTable, int equivalenceClass) {
@@ -254,6 +320,8 @@ namespace {
     }
 }
 
+#include "../../New/Print/Print.h"
+
 MooreTable Minimize(MooreTable table) {
     const auto columnIDs = table.GetColumnIDs();
     if (columnIDs.empty()) {
@@ -266,6 +334,8 @@ MooreTable Minimize(MooreTable table) {
 
     auto minimizationTable = CreateEmptyMinimizationTable(table);
     while (UpdateValuesOfEquivalenceClassInCells(minimizationTable, table)) {
+        // std::cout << "\n\n\n Вывод внутри Minimize: \n";
+        // PrintTable(minimizationTable);
         CheckEquivalenceMatrixAndSplit(minimizationTable);
     }
 
