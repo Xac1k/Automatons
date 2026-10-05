@@ -9,7 +9,7 @@ MealyTable Moore2Mealy(MooreTable& table) {
 
         MealyTable::TableColumnData columnData;
         auto fromColumn = table.GetColumnByID(columnID);
-
+        columnData.payload.equivalenceClass = 0;
         for (const auto& rowID : rowIDs) {
             MealyCellPayload cellPayload;
             auto fromRow = fromColumn.column.GetRowByID(rowID);

@@ -273,23 +273,33 @@ transitions:
 12 2 Z1 / Y2
 12 8 Z2 / Y1)");
 
-    auto mealyTable = From(mealy);
+    auto MealyTable = From(mealy);
+    std::cout << "MealyTable" << std::endl;
+    Print(MealyTable);
+    std::cout << "\n\n\n";
 
-    auto minimizedMealy = Minimize(mealyTable);
+    auto MinimizedMealyTable = Minimize(MealyTable);
+    std::cout << "MealyTable -> MinimizedMealyTable" << std::endl;
+    Print(MinimizedMealyTable);
+    std::cout << "\n\n\n";
 
-    auto mooreTable = Mealy2Moore(mealyTable);
+    auto MooreTable = Mealy2Moore(MealyTable);
     std::cout << "MealyTable -> MooreTable" << std::endl;
-    PrintTable(mooreTable);
+    Print(MooreTable);
+    std::cout << "\n\n\n";
 
-    auto minimizedMoore = Minimize(mooreTable);
-    std::cout << "\n\n\nMealyTable -> MooreTable -> MinimizedMooreTable" << std::endl;
-    PrintTable(minimizedMoore);
+    auto MinimizedMooreTable = Minimize(MooreTable);
+    std::cout << "MealyTable -> MooreTable -> MinimizedMooreTable" << std::endl;
+    Print(MinimizedMooreTable);
+    std::cout << "\n\n\n";
 
-    auto mealyTable2 = Moore2Mealy(minimizedMoore);
-    auto minimizedMealy2 = Minimize(mealyTable2);
+    auto MealyTable2 = Moore2Mealy(MinimizedMooreTable);
+    std::cout << "MealyTable -> MooreTable -> MinimizedMooreTable -> MealyTable2" << std::endl;
+    Print(MealyTable2);
+    std::cout << "\n\n\n";
 
-    std::cout << "\n\n\nMealyTable -> MinimizedMealyTable" << std::endl;
-    PrintTable(minimizedMealy);
-    std::cout << "\n\n\nMealyTable -> MooreTable -> MinimizedMooreTable -> MealyTable2 -> MinimizedMealyTable2" << std::endl;
-    PrintTable(minimizedMealy2);
+    auto MinimizedMealyTable2 = Minimize(MealyTable2);
+    std::cout << "MealyTable -> MooreTable -> MinimizedMooreTable -> MealyTable2 -> MinimizedMealyTable2" << std::endl;
+    Print(MinimizedMealyTable2);
+    std::cout << "\n\n\n";
 }

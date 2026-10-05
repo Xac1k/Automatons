@@ -105,7 +105,7 @@ namespace {
 
         std::map<MealyTable::ColumnID, int> columnIDToEquivalenceClass;
         for (int equivalenceClass = 0; equivalenceClass < sectors.size(); ++equivalenceClass) {
-            auto equivalenceClassIDs = sectors.at(equivalenceClass );
+            auto equivalenceClassIDs = sectors.at(equivalenceClass);
             for (const auto& columnID : equivalenceClassIDs) {
                 columnIDToEquivalenceClass[columnID] = equivalenceClass + 1;
             }

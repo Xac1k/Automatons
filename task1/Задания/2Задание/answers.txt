@@ -1,0 +1,350 @@
+MoreTable
+type: moore
+start: a1
+
+states:
+a1 | a1 / W1
+a2 | a2 / W2
+a3 | a3 / W3
+a4 | a4 / W4
+a5 | a5 / W1
+a6 | a6 / W2
+a7 | a7 / W3
+a8 | a8 / W4
+a9 | a9 / W2
+a10 | a10 / W2
+a11 | a11 / W1
+a12 | a12 / W2
+a13 | a13 / W3
+a14 | a14 / W4
+a15 | a15 / W1
+a16 | a16 / W2
+a17 | a17 / W3
+a18 | a18 / W4
+a19 | a19 / W1
+
+transitions:
+a1 a2 z1
+a1 a3 z2
+a1 a4 z3
+a2 a9 z1
+a2 a10 z2
+a2 a11 z3
+a3 a5 z1
+a3 a3 z2
+a3 a3 z3
+a4 a4 z1
+a4 a15 z2
+a4 a4 z3
+a5 a5 z1
+a5 a5 z2
+a5 a6 z3
+a6 a7 z1
+a6 a8 z2
+a6 a6 z3
+a7 a7 z1
+a7 a7 z2
+a7 a1 z3
+a8 a1 z1
+a8 a8 z2
+a8 a8 z3
+a9 a9 z1
+a9 a9 z2
+a9 a19 z3
+a10 a10 z1
+a10 a10 z2
+a10 a19 z3
+a11 a11 z1
+a11 a11 z2
+a11 a12 z3
+a12 a13 z1
+a12 a14 z2
+a12 a12 z3
+a13 a13 z1
+a13 a13 z2
+a13 a1 z3
+a14 a1 z1
+a14 a14 z2
+a14 a14 z3
+a15 a15 z1
+a15 a15 z2
+a15 a16 z3
+a16 a17 z1
+a16 a18 z2
+a16 a16 z3
+a17 a17 z1
+a17 a17 z2
+a17 a1 z3
+a18 a1 z1
+a18 a18 z2
+a18 a18 z3
+a19 a19 z1
+a19 a19 z2
+a19 a12 z3
+
+
+
+MoreTable -> MinimizedMooreTable
+type: moore
+start: 1
+
+states:
+1 | 1 / W1
+2 | 2 / W2
+3 | 3 / W3
+4 | 4 / W4
+5 | 5 / W1
+6 | 6 / W2
+7 | 7 / W3
+8 | 8 / W4
+
+transitions:
+1 2 z1
+1 3 z2
+1 4 z3
+2 2 z1
+2 2 z2
+2 5 z3
+3 5 z1
+3 3 z2
+3 3 z3
+4 4 z1
+4 5 z2
+4 4 z3
+5 5 z1
+5 5 z2
+5 6 z3
+6 7 z1
+6 8 z2
+6 6 z3
+7 7 z1
+7 7 z2
+7 1 z3
+8 1 z1
+8 8 z2
+8 8 z3
+
+
+
+MoreTable -> MealyTable
+type: mealy
+start: a1
+
+transitions:
+a1 a2 z1 / W2
+a1 a3 z2 / W3
+a1 a4 z3 / W4
+a2 a9 z1 / W2
+a2 a10 z2 / W2
+a2 a11 z3 / W1
+a3 a5 z1 / W1
+a3 a3 z2 / W3
+a3 a3 z3 / W3
+a4 a4 z1 / W4
+a4 a15 z2 / W1
+a4 a4 z3 / W4
+a5 a5 z1 / W1
+a5 a5 z2 / W1
+a5 a6 z3 / W2
+a6 a7 z1 / W3
+a6 a8 z2 / W4
+a6 a6 z3 / W2
+a7 a7 z1 / W3
+a7 a7 z2 / W3
+a7 a1 z3 / W1
+a8 a1 z1 / W1
+a8 a8 z2 / W4
+a8 a8 z3 / W4
+a9 a9 z1 / W2
+a9 a9 z2 / W2
+a9 a19 z3 / W1
+a10 a10 z1 / W2
+a10 a10 z2 / W2
+a10 a19 z3 / W1
+a11 a11 z1 / W1
+a11 a11 z2 / W1
+a11 a12 z3 / W2
+a12 a13 z1 / W3
+a12 a14 z2 / W4
+a12 a12 z3 / W2
+a13 a13 z1 / W3
+a13 a13 z2 / W3
+a13 a1 z3 / W1
+a14 a1 z1 / W1
+a14 a14 z2 / W4
+a14 a14 z3 / W4
+a15 a15 z1 / W1
+a15 a15 z2 / W1
+a15 a16 z3 / W2
+a16 a17 z1 / W3
+a16 a18 z2 / W4
+a16 a16 z3 / W2
+a17 a17 z1 / W3
+a17 a17 z2 / W3
+a17 a1 z3 / W1
+a18 a1 z1 / W1
+a18 a18 z2 / W4
+a18 a18 z3 / W4
+a19 a19 z1 / W1
+a19 a19 z2 / W1
+a19 a12 z3 / W2
+
+
+
+MoreTable -> MealyTable -> MinimizedMealy
+type: mealy
+start: 0
+
+transitions:
+0 1 z1 / W2
+0 2 z2 / W3
+0 3 z3 / W4
+1 1 z1 / W2
+1 1 z2 / W2
+1 4 z3 / W1
+2 4 z1 / W1
+2 2 z2 / W3
+2 2 z3 / W3
+3 3 z1 / W4
+3 4 z2 / W1
+3 3 z3 / W4
+4 4 z1 / W1
+4 4 z2 / W1
+4 5 z3 / W2
+5 6 z1 / W3
+5 7 z2 / W4
+5 5 z3 / W2
+6 6 z1 / W3
+6 6 z2 / W3
+6 0 z3 / W1
+7 0 z1 / W1
+7 7 z2 / W4
+7 7 z3 / W4
+
+
+
+MoreTable -> MealyTable -> MinimizedMealy -> MooreTabl2
+type: moore
+start: Z1
+
+states:
+Z1 | a1 / W1
+Z2 | a2 / W2
+Z3 | a3 / W3
+Z4 | a4 / W4
+Z5 | a5 / W1
+Z6 | a6 / W2
+Z7 | a7 / W3
+Z8 | a8 / W4
+Z9 | a9 / W2
+Z10 | a10 / W2
+Z11 | a11 / W1
+Z12 | a12 / W2
+Z13 | a13 / W3
+Z14 | a14 / W4
+Z15 | a15 / W1
+Z16 | a16 / W2
+Z17 | a17 / W3
+Z18 | a18 / W4
+Z19 | a19 / W1
+
+transitions:
+Z1 Z2 z1
+Z1 Z3 z2
+Z1 Z4 z3
+Z2 Z9 z1
+Z2 Z10 z2
+Z2 Z11 z3
+Z3 Z5 z1
+Z3 Z3 z2
+Z3 Z3 z3
+Z4 Z4 z1
+Z4 Z15 z2
+Z4 Z4 z3
+Z5 Z5 z1
+Z5 Z5 z2
+Z5 Z6 z3
+Z6 Z7 z1
+Z6 Z8 z2
+Z6 Z6 z3
+Z7 Z7 z1
+Z7 Z7 z2
+Z7 Z1 z3
+Z8 Z1 z1
+Z8 Z8 z2
+Z8 Z8 z3
+Z9 Z9 z1
+Z9 Z9 z2
+Z9 Z19 z3
+Z10 Z10 z1
+Z10 Z10 z2
+Z10 Z19 z3
+Z11 Z11 z1
+Z11 Z11 z2
+Z11 Z12 z3
+Z12 Z13 z1
+Z12 Z14 z2
+Z12 Z12 z3
+Z13 Z13 z1
+Z13 Z13 z2
+Z13 Z1 z3
+Z14 Z1 z1
+Z14 Z14 z2
+Z14 Z14 z3
+Z15 Z15 z1
+Z15 Z15 z2
+Z15 Z16 z3
+Z16 Z17 z1
+Z16 Z18 z2
+Z16 Z16 z3
+Z17 Z17 z1
+Z17 Z17 z2
+Z17 Z1 z3
+Z18 Z1 z1
+Z18 Z18 z2
+Z18 Z18 z3
+Z19 Z19 z1
+Z19 Z19 z2
+Z19 Z12 z3
+
+
+
+MoreTable -> MealyTable -> MinimizedMealy -> MooreTabl2 -> MinimizedMooreTable2
+type: moore
+start: 1
+
+states:
+1 | 1 / W1
+2 | 2 / W2
+3 | 3 / W3
+4 | 4 / W4
+5 | 5 / W1
+6 | 6 / W2
+7 | 7 / W3
+8 | 8 / W4
+
+transitions:
+1 2 z1
+1 3 z2
+1 4 z3
+2 2 z1
+2 2 z2
+2 5 z3
+3 5 z1
+3 3 z2
+3 3 z3
+4 4 z1
+4 5 z2
+4 4 z3
+5 5 z1
+5 5 z2
+5 6 z3
+6 7 z1
+6 8 z2
+6 6 z3
+7 7 z1
+7 7 z2
+7 1 z3
+8 1 z1
+8 8 z2
+8 8 z3
