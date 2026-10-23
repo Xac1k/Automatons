@@ -1,7 +1,7 @@
 #include "DeterminizeMoore.h"
+#include "../../StringUtils/StringUtils.h"
 
 #include <algorithm>
-#include <cctype>
 #include <deque>
 #include <queue>
 #include <set>
@@ -10,18 +10,13 @@
 #include <unordered_set>
 #include <utility>
 #include <vector>
+#include <bits/locale_facets_nonio.h>
+#include <oneapi/tbb/task_group.h>
 
 namespace {
 using StateSet = std::vector<std::string>;
 
-constexpr const char* kEmptySymbol = "EMPTY";
-
-std::string Trim(std::string value) {
-    const auto notSpace = [](unsigned char c) { return !std::isspace(c); };
-    value.erase(value.begin(), std::find_if(value.begin(), value.end(), notSpace));
-    value.erase(std::find_if(value.rbegin(), value.rend(), notSpace).base(), value.end());
-    return value;
-}
+constexpr auto kEmptySymbol = "EMPTY";
 
 StateSet ParseStateList(const std::string& text) {
     StateSet states;
@@ -35,8 +30,8 @@ StateSet ParseStateList(const std::string& text) {
         begin = comma + 1;
     }
 
-    std::sort(states.begin(), states.end());
-    states.erase(std::unique(states.begin(), states.end()), states.end());
+    std::ranges::sort(states);
+    states.erase(std::ranges::unique(states).begin(), states.end());
     return states;
 }
 
@@ -50,7 +45,7 @@ std::string MakeStateName(const StateSet& states) {
 }
 
 bool Contains(const std::vector<std::string>& values, const std::string& value) {
-    return std::find(values.begin(), values.end(), value) != values.end();
+    return std::ranges::find(values, value) != values.end();
 }
 
 // Compute the epsilon-closure of a single state: the set of all states
@@ -82,7 +77,7 @@ StateSet EpsilonClosure(
         }
     }
 
-    std::sort(closure.begin(), closure.end());
+    std::ranges::sort(closure);
     return closure;
 }
 
@@ -90,98 +85,148 @@ StateSet EpsilonClosure(
 // and then uniquifying the result.
 StateSet CloseSet(
     const StateSet& states,
-    const std::unordered_map<std::string, StateSet>& redefinition)
-{
+    const std::unordered_map<std::string, StateSet>& redefinition
+) {
     StateSet result;
     for (const auto& s : states) {
-        const auto it = redefinition.find(s);
-        if (it != redefinition.end()) {
+        if (const auto it = redefinition.find(s); it != redefinition.end()) {
             result.insert(result.end(), it->second.begin(), it->second.end());
         } else {
             result.push_back(s);
         }
     }
-    std::sort(result.begin(), result.end());
-    result.erase(std::unique(result.begin(), result.end()), result.end());
+    std::ranges::sort(result);
+    result.erase(std::ranges::unique(result).begin(), result.end());
     return result;
 }
-} // namespace
 
-MooreTable DeterminizeMoore(MooreTable input, const std::string& startStateID) {
-    const auto inputStateIDs = input.GetColumnIDs();
-    if (inputStateIDs.empty()) {
-        throw std::invalid_argument("Cannot determinize an empty MooreTable");
-    }
-    if (std::find(inputStateIDs.begin(), inputStateIDs.end(), startStateID) == inputStateIDs.end()) {
-        throw std::invalid_argument("Start state does not exist: " + startStateID);
-    }
-
-    // Collect the input alphabet and the rows present in each column.
-    // EMPTY is recorded separately and will never appear in the output.
-    std::set<std::string> alphabet;
-    std::unordered_map<std::string, std::vector<std::string>> rowsByState;
-    std::unordered_map<std::string, std::vector<std::string>> emptySuccessors;
-
-    for (const auto& stateID : inputStateIDs) {
-        auto rowIDs = input.GetColumnByID(stateID).column.GetRowIDs();
-        rowsByState.emplace(stateID, rowIDs);
-
-        for (const auto& symbol : rowIDs) {
-            if (symbol == kEmptySymbol) {
-                const auto& targetText =
-                    input.GetColumnByID(stateID).column.GetRowByID(symbol).toColumnID;
-                auto parsed = ParseStateList(targetText);
-                emptySuccessors[stateID] = std::move(parsed);
-            } else {
-                alphabet.insert(symbol);
-            }
-        }
-    }
-
-    // Validate all transition targets (including EMPTY) up front.
-    for (const auto& stateID : inputStateIDs) {
+void ValidateTransitions(MooreTable input) {
+    for (const auto inputStateIDs = input.GetColumnIDs(); const auto& stateID : inputStateIDs) {
         auto& column = input.GetColumnByID(stateID).column;
-        for (const auto& symbol : rowsByState.at(stateID)) {
+        for (const auto& symbol : input.GetColumnByID(stateID).column.GetRowIDs()) {
             const auto targets = ParseStateList(column.GetRowByID(symbol).toColumnID);
             for (const auto& target : targets) {
-                if (std::find(inputStateIDs.begin(), inputStateIDs.end(), target) ==
-                    inputStateIDs.end()) {
+                if (std::ranges::find(inputStateIDs, target) == inputStateIDs.end()) {
                     throw std::invalid_argument(
-                        "Transition from '" + stateID + "' references unknown state '" +
-                        target + "'");
+                        "Transition from '" + stateID + "' references unknown state '" += target + "'"
+                    );
                 }
             }
         }
     }
+}
 
-    // ------------------------------------------------------------------
-    // Step 1. Build the redefinition map:
-    //   original state  ->  its epsilon-closure (including itself)
-    // ------------------------------------------------------------------
+void ValidateInputData(const MooreTable& input, const std::string& startStateID) {
+    const auto inputStateIDs = input.GetColumnIDs();
+    if (inputStateIDs.empty()) {
+        throw std::invalid_argument("Cannot determinize an empty MooreTable");
+    }
+    if (std::ranges::find(inputStateIDs, startStateID) == inputStateIDs.end()) {
+        throw std::invalid_argument("Start state does not exist: " + startStateID);
+    }
+
+    ValidateTransitions(input);
+}
+
+std::unordered_map<std::string, StateSet> CacheEmptySuccessors(MooreTable& input) {
+    const auto inputStateIDs = input.GetColumnIDs();
+    std::unordered_map<std::string, std::vector<std::string>> emptySuccessors;
+
+    for (const auto& stateID : inputStateIDs) {
+        auto rowIDs = input.GetColumnByID(stateID).column.GetRowIDs();
+
+        for (const auto& symbol : rowIDs) {
+            if (symbol == kEmptySymbol) {
+                const auto& targets = input.GetColumnByID(stateID).column.GetRowByID(symbol).toColumnID;
+                auto targetsSet = ParseStateList(targets);
+                emptySuccessors[stateID] = std::move(targetsSet);
+            }
+        }
+    }
+
+    return std::move(emptySuccessors);
+}
+
+std::unordered_map<std::string, StateSet>  BuildRedefinitionMap(MooreTable& input) {
+    const auto inputStateIDs = input.GetColumnIDs();
+    const auto emptySuccessors = CacheEmptySuccessors(input);
+
     std::unordered_map<std::string, StateSet> redefinition;
     for (const auto& stateID : inputStateIDs) {
         redefinition[stateID] = EpsilonClosure(stateID, emptySuccessors);
     }
 
-    // ------------------------------------------------------------------
-    // Step 2. Ordinary subset construction, but every newly formed subset
-    // is immediately closed under the redefinition map.
-    // ------------------------------------------------------------------
-    MooreTable output;
-    std::deque<StateSet> queue;
-    std::unordered_set<std::string> created;
+    return std::move(redefinition);
+}
 
-    // Initial state = epsilon-closure of the given start state.
-    StateSet initial = redefinition.at(startStateID);
+std::set<std::string> BuildAlphabetWithoutEmpty(MooreTable& input) {
+    const auto inputStateIDs = input.GetColumnIDs();
+    std::set<std::string> alphabet;
+
+    for (const auto& stateID : inputStateIDs) {
+        const auto rowIDs = input.GetColumnByID(stateID).column.GetRowIDs();
+        for (const auto& symbol : rowIDs) {
+            if (symbol != kEmptySymbol) {
+                alphabet.insert(symbol);
+            }
+        }
+    }
+
+    return std::move(alphabet);
+}
+
+void AddInitialStateToQueue(
+    const std::string& startStateID,
+    std::deque<StateSet>& queue,
+    std::unordered_set<std::string>& created,
+    const std::unordered_map<std::string, StateSet>& redefinitions
+) {
+    const StateSet& initial = redefinitions.at(startStateID);
     const std::string initialName = MakeStateName(initial);
     queue.push_back(initial);
     created.insert(initialName);
+}
+
+void DefineAnOutputSignal(MooreTable& input, MooreTable::TableColumnData& columnData, const StateSet& current) {
+    columnData.payload.outputSignal.clear();
+    for (const auto& stateID : current) {
+        if (input.GetColumnByID(stateID).payload.outputSignal == "OUTPUT") {
+            columnData.payload.outputSignal = "OUTPUT";
+            break;
+        }
+    }
+}
+
+StateSet CollectUniqueTargetsSetFromState(MooreTable& input, const StateSet& current, const std::string& symbol) {
+    StateSet targets;
+
+    for (const auto& stateID : current) {
+        const auto& rowIDs = input.GetColumnByID(stateID).column.GetRowIDs();
+        if (!Contains(rowIDs, symbol)) continue;
+        const auto& targetText = input.GetColumnByID(stateID).column.GetRowByID(symbol).toColumnID;
+        auto parsed = ParseStateList(targetText);
+        targets.insert(targets.end(), parsed.begin(), parsed.end());
+    }
+    std::ranges::sort(targets);
+    targets.erase(std::ranges::unique(targets).begin(), targets.end());
+
+    return std::move(targets);
+}
+}
+
+MooreTable DeterminizeMoore(MooreTable input, const std::string& startStateID) {
+    ValidateInputData(input, startStateID);
+    std::set<std::string> alphabetWithoutEmpty = BuildAlphabetWithoutEmpty(input);
+    auto redefinitions = BuildRedefinitionMap(input);
+
+    MooreTable output;
+    std::deque<StateSet> queue;
+    std::unordered_set<std::string> created;
+    AddInitialStateToQueue(startStateID, queue, created, redefinitions);
 
     auto addState = [&](const StateSet& states) {
-        // Translate (close) the candidate set before deciding whether it is new.
-        StateSet closed = CloseSet(states, redefinition);
-        const std::string name = MakeStateName(closed);
-        if (created.insert(name).second) {
+        StateSet closed = CloseSet(states, redefinitions);
+        if (const std::string name = MakeStateName(closed); created.insert(name).second) {
             queue.push_back(std::move(closed));
         }
     };
@@ -194,36 +239,16 @@ MooreTable DeterminizeMoore(MooreTable input, const std::string& startStateID) {
         MooreTable::TableColumnData columnData;
         columnData.payload.equivalenceClass = 0;
         columnData.payload.stateID = currentName;
-        columnData.payload.outputSignal.clear();
-        // A composite state is accepting if any of its members is accepting.
-        for (const auto& stateID : current) {
-            if (input.GetColumnByID(stateID).payload.outputSignal == "OUTPUT") {
-                columnData.payload.outputSignal = "OUTPUT";
-                break;
-            }
-        }
+        DefineAnOutputSignal(input, columnData, current);
 
-        // Insert the column before processing its transitions.
         output.AddNewColumn(currentName, columnData);
 
-        // Only ordinary (non-EMPTY) symbols appear in the resulting automaton.
-        for (const auto& symbol : alphabet) {
-            StateSet targets;
-            for (const auto& stateID : current) {
-                const auto& rowIDs = rowsByState.at(stateID);
-                if (!Contains(rowIDs, symbol)) continue;
-                const auto& targetText =
-                    input.GetColumnByID(stateID).column.GetRowByID(symbol).toColumnID;
-                auto parsed = ParseStateList(targetText);
-                targets.insert(targets.end(), parsed.begin(), parsed.end());
-            }
-            std::sort(targets.begin(), targets.end());
-            targets.erase(std::unique(targets.begin(), targets.end()), targets.end());
+        for (const auto& symbol : alphabetWithoutEmpty) {
+            auto targets = CollectUniqueTargetsSetFromState(input, current, symbol);
 
             MooreCellPayload cell;
             if (!targets.empty()) {
-                // Close the target set under epsilon transitions before naming it.
-                StateSet closedTargets = CloseSet(targets, redefinition);
+                StateSet closedTargets = CloseSet(targets, redefinitions);
                 cell.toColumnID = MakeStateName(closedTargets);
                 addState(closedTargets);
             } else {

@@ -24,10 +24,12 @@ void RTrim(std::string& str)
     str.erase(rit.base(), str.end());
 }
 
-void Trim(std::string& str)
+std::string Trim(const std::string& str)
 {
-    LTrim(str);
-    RTrim(str);
+    std::string copiedText = str;
+    LTrim(copiedText);
+    RTrim(copiedText);
+    return copiedText;
 }
 
 void ToLower(std::string& str)
