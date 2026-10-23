@@ -51,7 +51,7 @@ AutomatonMealy MealyParse(const std::string& text) {
 AutomatonMoore MooreParse(const std::string& text) {
     AutomatonMoore automaton;
     const std::regex mooreRegex(
-        R"(type:\s*(\w+)\s*start:\s*(\w+)\s*states:(\s*(\w+\s*\|\s*[\wа-яА-Я_0-9]+\s*\/\s*[а-яА-Я_\w]*\s*)*)transitions:\s*((\w+\s*\w+\s*[\wа-яА-ЯёЁ\d_]+\s*)*))",
+        R"(type:\s*(\w+)\s*start:\s*(\w+)\s*states:(\s*(\w+\s*\|\s*[\wа-яА-Я_0-9]+\s*\/\s*[а-яА-Я_\w]*\s*)*)transitions:\s*((\w+\s*[\w,]+\s*[\wа-яА-ЯёЁ\d_]+\s*)*))",
         std::regex::ECMAScript
     );
     const std::regex mooreStateRegex(
@@ -59,7 +59,7 @@ AutomatonMoore MooreParse(const std::string& text) {
         std::regex::ECMAScript
     );
     const std::regex mooreTransitionRegex(
-        R"((\w+)\s*(\w+)\s*([\wа-яА-ЯёЁ\d_]+))",
+        R"((\w+)\s*([\w,]+)\s*([\wа-яА-ЯёЁ\d_]+))",
         std::regex::ECMAScript
     );
 

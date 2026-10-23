@@ -5,6 +5,7 @@
 #include "src/Minimize/Mealy/Minimize.h"
 #include "src/MealyToMoore/MealyToMoore.h"
 #include "src/MooreToMealy/MooreToMealy.h"
+#include "src/New/DeterminizeMoore/DeterminizeMoore.h"
 #include "src/New/From/From.h"
 #include "src/New/Print/Print.h"
 #include "src/Old/Parse/Parse.h"
@@ -244,62 +245,23 @@ MealyTable CreateTestMealyTable() {
 }
 
 int main() {
-    auto mealy = MealyParse(R"(type: mealy
-start: 1
+    auto moore = MooreParse(R"(type: moore
+start: q0
+
+states:
+q0 | q0 / OUTPUT
+q1 | q1 / OUTPUT
+q2 | q2 / OUTPUT
 
 transitions:
-1 10 Z1 / Y1
-1 5 Z2 / Y2
-2 12 Z1 / Y1
-2 8 Z2 / Y2
-3 5 Z1 / Y2
-3 6 Z2 / Y1
-4 7 Z1 / Y2
-4 11 Z2 / Y1
-5 3 Z1 / Y1
-5 9 Z2 / Y2
-6 7 Z1 / Y2
-6 11 Z2 / Y1
-7 3 Z1 / Y1
-7 6 Z2 / Y2
-8 10 Z1 / Y1
-8 4 Z2 / Y2
-9 7 Z1 / Y2
-9 6 Z2 / Y1
-10 1 Z1 / Y2
-10 8 Z2 / Y1
-11 5 Z1 / Y2
-11 9 Z2 / Y1
-12 2 Z1 / Y2
-12 8 Z2 / Y1)");
+q0 q0 A
+q0 q1 EMPTY
+q1 q1 B
+q1 q2 EMPTY
+q2 q2 C)");
 
-    auto MealyTable = From(mealy);
-    std::cout << "MealyTable" << std::endl;
-    Print(MealyTable);
-    std::cout << "\n\n\n";
+    auto mooreTable = From(moore);
+    auto determinized = DeterminizeMoore(mooreTable, "q0");
 
-    auto MinimizedMealyTable = Minimize(MealyTable);
-    std::cout << "MealyTable -> MinimizedMealyTable" << std::endl;
-    Print(MinimizedMealyTable);
-    std::cout << "\n\n\n";
-
-    auto MooreTable = Mealy2Moore(MealyTable);
-    std::cout << "MealyTable -> MooreTable" << std::endl;
-    Print(MooreTable);
-    std::cout << "\n\n\n";
-
-    auto MinimizedMooreTable = Minimize(MooreTable);
-    std::cout << "MealyTable -> MooreTable -> MinimizedMooreTable" << std::endl;
-    Print(MinimizedMooreTable);
-    std::cout << "\n\n\n";
-
-    auto MealyTable2 = Moore2Mealy(MinimizedMooreTable);
-    std::cout << "MealyTable -> MooreTable -> MinimizedMooreTable -> MealyTable2" << std::endl;
-    Print(MealyTable2);
-    std::cout << "\n\n\n";
-
-    auto MinimizedMealyTable2 = Minimize(MealyTable2);
-    std::cout << "MealyTable -> MooreTable -> MinimizedMooreTable -> MealyTable2 -> MinimizedMealyTable2" << std::endl;
-    Print(MinimizedMealyTable2);
-    std::cout << "\n\n\n";
+    Print(determinized);
 }
