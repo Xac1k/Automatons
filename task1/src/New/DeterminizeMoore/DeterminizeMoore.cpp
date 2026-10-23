@@ -208,7 +208,7 @@ StateSet CollectUniqueTargetsSetFromState(MooreTable& input, const StateSet& cur
 }
 }
 
-MooreTable DeterminizeMoore(MooreTable input, const std::string& startStateID) {
+MooreTable DeterminizeMoore(MooreTable& input, const std::string& startStateID) {
     ValidateInputData(input, startStateID);
     std::set<std::string> alphabetWithoutEmpty = BuildAlphabetWithoutEmpty(input);
     auto redefinitions = BuildRedefinitionMap(input);
