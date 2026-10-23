@@ -10,7 +10,6 @@
 #include <unordered_set>
 #include <utility>
 #include <vector>
-#include <bits/locale_facets_nonio.h>
 #include <oneapi/tbb/task_group.h>
 
 namespace {
@@ -41,16 +40,13 @@ std::string MakeStateName(const StateSet& states) {
         if (!result.empty()) result += ',';
         result += state;
     }
-    return result;
+    return std::move(result);
 }
 
 bool Contains(const std::vector<std::string>& values, const std::string& value) {
     return std::ranges::find(values, value) != values.end();
 }
 
-// Compute the epsilon-closure of a single state: the set of all states
-// reachable from it by zero or more EMPTY transitions, including itself.
-// Cycles are handled by the visited set; they are not considered an error.
 StateSet EpsilonClosure(
     const std::string& start,
     const std::unordered_map<std::string, std::vector<std::string>>& emptySuccessors)
@@ -81,8 +77,6 @@ StateSet EpsilonClosure(
     return closure;
 }
 
-// Expand a set of states by replacing every state with its full epsilon-closure
-// and then uniquifying the result.
 StateSet CloseSet(
     const StateSet& states,
     const std::unordered_map<std::string, StateSet>& redefinition
@@ -100,7 +94,7 @@ StateSet CloseSet(
     return result;
 }
 
-void ValidateTransitions(MooreTable input) {
+void ValidateTransitions(MooreTable& input) {
     for (const auto inputStateIDs = input.GetColumnIDs(); const auto& stateID : inputStateIDs) {
         auto& column = input.GetColumnByID(stateID).column;
         for (const auto& symbol : input.GetColumnByID(stateID).column.GetRowIDs()) {
@@ -116,7 +110,7 @@ void ValidateTransitions(MooreTable input) {
     }
 }
 
-void ValidateInputData(const MooreTable& input, const std::string& startStateID) {
+void ValidateInputData(MooreTable& input, const std::string& startStateID) {
     const auto inputStateIDs = input.GetColumnIDs();
     if (inputStateIDs.empty()) {
         throw std::invalid_argument("Cannot determinize an empty MooreTable");
@@ -248,9 +242,7 @@ MooreTable DeterminizeMoore(MooreTable input, const std::string& startStateID) {
 
             MooreCellPayload cell;
             if (!targets.empty()) {
-                StateSet closedTargets = CloseSet(targets, redefinitions);
-                cell.toColumnID = MakeStateName(closedTargets);
-                addState(closedTargets);
+                addState(targets);
             } else {
                 cell.toColumnID.clear();
             }
@@ -258,5 +250,5 @@ MooreTable DeterminizeMoore(MooreTable input, const std::string& startStateID) {
         }
     }
 
-    return output;
+    return std::move(output);
 }
