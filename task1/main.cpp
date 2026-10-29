@@ -9,6 +9,7 @@
 #include "src/New/From/From.h"
 #include "src/New/Print/Print.h"
 #include "src/Old/Parse/Parse.h"
+#include "src/Old/Parse/ParseFromLanguage.h"
 
 MooreTable CreateTestMooreTable() {
     MooreTable table;
@@ -245,23 +246,34 @@ MealyTable CreateTestMealyTable() {
 }
 
 int main() {
-    auto moore = MooreParse(R"(type: moore
-start: q0
+    auto language = ParseFromLanguage(Side::left, R"(S -> S.a | S.b | C.c
+A -> B.a | S.b | OUTPUT.c
+B -> B.b | B.a | S.c | OUTPUT.b
+C -> A.a | B.b | S.c | OUTPUT.a
+)");
 
-states:
-q0 | q0 / OUTPUT
-q1 | q1 / OUTPUT
-q2 | q2 / OUTPUT
+    auto moore = From(language);
+    // Print(moore);
+    auto determinizedMoore = DeterminizeMoore(moore);
+    Print(determinizedMoore);
 
-transitions:
-q0 q0 A
-q0 q1 EMPTY
-q1 q1 B
-q1 q2 EMPTY
-q2 q2 C)");
-
-    auto mooreTable = From(moore);
-    auto determinized = DeterminizeMoore(mooreTable, "q0");
-
-    Print(determinized);
+//     auto moore = MooreParse(R"(type: moore
+// start: q0
+//
+// states:
+// q0 | q0 / OUTPUT
+// q1 | q1 / OUTPUT
+// q2 | q2 / OUTPUT
+//
+// transitions:
+// q0 q0 A
+// q0 q1 EMPTY
+// q1 q1 B
+// q1 q2 EMPTY
+// q2 q2 C)");
+//
+//     auto mooreTable = From(moore);
+//     auto determinized = DeterminizeMoore(mooreTable, "q0");
+//
+//     Print(determinized);
 }

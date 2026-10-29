@@ -37,7 +37,7 @@ StateSet ParseStateList(const std::string& text) {
 std::string MakeStateName(const StateSet& states) {
     std::string result;
     for (const auto& state : states) {
-        if (!result.empty()) result += ',';
+        if (!result.empty()) result += '_';
         result += state;
     }
     return std::move(result);
@@ -208,21 +208,25 @@ StateSet CollectUniqueTargetsSetFromState(MooreTable& input, const StateSet& cur
 }
 }
 
-MooreTable DeterminizeMoore(MooreTable& input, const std::string& startStateID) {
-    ValidateInputData(input, startStateID);
+MooreTable DeterminizeMoore(MooreTable input) {
+    auto startState = input.GetStartState();
+    ValidateInputData(input, startState);
     std::set<std::string> alphabetWithoutEmpty = BuildAlphabetWithoutEmpty(input);
     auto redefinitions = BuildRedefinitionMap(input);
 
     MooreTable output;
+    output.SetStartState(startState);
     std::deque<StateSet> queue;
     std::unordered_set<std::string> created;
-    AddInitialStateToQueue(startStateID, queue, created, redefinitions);
+    AddInitialStateToQueue(startState, queue, created, redefinitions);
 
     auto addState = [&](const StateSet& states) {
         StateSet closed = CloseSet(states, redefinitions);
-        if (const std::string name = MakeStateName(closed); created.insert(name).second) {
+        const std::string name = MakeStateName(closed);
+        if (created.insert(name).second) {
             queue.push_back(std::move(closed));
         }
+        return name;
     };
 
     while (!queue.empty()) {
@@ -242,7 +246,9 @@ MooreTable DeterminizeMoore(MooreTable& input, const std::string& startStateID) 
 
             MooreCellPayload cell;
             if (!targets.empty()) {
-                addState(targets);
+                StateSet closedTargets = CloseSet(targets, redefinitions);
+                cell.toColumnID = MakeStateName(closedTargets);
+                addState(closedTargets);
             } else {
                 cell.toColumnID.clear();
             }

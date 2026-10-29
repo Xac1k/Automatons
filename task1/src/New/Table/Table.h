@@ -4,6 +4,7 @@
 #include <map>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 #include <ranges>
 #include <stdexcept>
@@ -94,6 +95,15 @@ public:
         return columnIDs;
     }
 
+    void SetStartState(std::string newStartState) {
+        m_startState = std::move(newStartState);
+    }
+
+    [[nodiscard]] std::string GetStartState() const {
+        return m_startState;
+    }
+
 private:
     std::map<ColumnID, TableColumnData> columns;
+    std::string m_startState;
 };

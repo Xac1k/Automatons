@@ -16,5 +16,4 @@
 // appears in the resulting automaton.
 //
 // Throws std::invalid_argument for an unknown start state or target state.
-MooreTable DeterminizeMoore(MooreTable input,
-                            const std::string& startStateID);
+MooreTable DeterminizeMoore(MooreTable input);

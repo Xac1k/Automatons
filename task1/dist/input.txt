@@ -1,22 +1,53 @@
-type: mealy
-start: 1
+type: moore
+start: OUTPUT
+
+states:
+A | A / 
+B | B / 
+C | C / 
+S | S / OUTPUT
+A,B | A,B / 
+A,S | A,S / OUTPUT
+B,C | B,C / 
+C,S | C,S / OUTPUT
+A,B,C | A,B,C / 
+A,B,S | A,B,S / OUTPUT
+B,C,S | B,C,S / OUTPUT
+OUTPUT | OUTPUT / 
+A,B,C,S | A,B,C,S / OUTPUT
 
 transitions:
-1 2 X1 / Y0
-1 1 X2 / Y1
-1 1 X3 / Y1
-2 1 X1 / Y1
-2 1 X2 / Y0
-2 4 X3 / Y0
-3 1 X1 / Y1
-3 5 X2 / Y0
-3 4 X3 / Y0
-4 5 X1 / Y1
-4 1 X2 / Y1
-4 3 X3 / Y0
-5 2 X1 / Y0
-5 6 X2 / Y1
-5 5 X3 / Y1
-6 4 X1 / Y0
-6 6 X2 / Y1
-6 4 X3 / Y1
+A C a
+B A,B a
+B B,C b
+C S c
+S S a
+S A,S b
+S B,C c
+A,B A,B,C a
+A,B B,C b
+A,S C,S a
+A,S A,S b
+A,S B,C c
+B,C A,B a
+B,C B,C b
+B,C S c
+C,S S a
+C,S A,S b
+C,S B,C,S c
+A,B,C A,B,C a
+A,B,C B,C b
+A,B,C S c
+A,B,S A,B,C,S a
+A,B,S A,B,C,S b
+A,B,S B,C c
+B,C,S A,B,S a
+B,C,S A,B,C,S b
+B,C,S B,C,S c
+OUTPUT C a
+OUTPUT B b
+OUTPUT A c
+A,B,C,S A,B,C,S a
+A,B,C,S A,B,C,S b
+A,B,C,S B,C,S c
+

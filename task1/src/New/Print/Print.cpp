@@ -6,6 +6,7 @@
 #include <vector>
 #include <iomanip>
 #include <string>
+#include "../../StringUtils/StringUtils.h"
 
 void Print(MealyTable& table) {
     const auto columnIDs = table.GetColumnIDs();
@@ -15,7 +16,7 @@ void Print(MealyTable& table) {
     }
 
     std::cout << "type: mealy\n";
-    std::cout << "start: " << columnIDs.front() << "\n";
+    std::cout << "start: " << table.GetStartState() << "\n";
 
     std::cout << "\n";
     std::cout << "transitions:\n";
@@ -34,6 +35,23 @@ void Print(MealyTable& table) {
     }
 }
 
+std::vector<std::string> ParseStateList(const std::string& text) {
+    std::vector<std::string> states;
+    std::size_t begin = 0;
+    while (begin <= text.size()) {
+        const std::size_t comma = text.find(',', begin);
+        const std::size_t end = (comma == std::string::npos) ? text.size() : comma;
+        std::string state = Trim(text.substr(begin, end - begin));
+        if (!state.empty()) states.push_back(std::move(state));
+        if (comma == std::string::npos) break;
+        begin = comma + 1;
+    }
+
+    std::ranges::sort(states);
+    states.erase(std::ranges::unique(states).begin(), states.end());
+    return states;
+}
+
 void Print(MooreTable& table) {
     const auto columnIDs = table.GetColumnIDs();
     if (columnIDs.empty()) {
@@ -42,13 +60,17 @@ void Print(MooreTable& table) {
     }
 
     std::cout << "type: moore\n";
-    std::cout << "start: " << columnIDs.front() << "\n";
+    std::cout << "start: " << table.GetStartState() << "\n";
     std::cout << "\n";
     std::cout << "states:\n";
 
     for (const auto& state : columnIDs) {
         const auto& payload = table.GetColumnByID(state).payload;
-        std::cout << state << " | " << payload.stateID << " / " << payload.outputSignal << "\n";
+        auto toStates = ParseStateList(payload.stateID);
+
+        for (const auto& toState : toStates) {
+            std::cout << state << " | " << toState << " / " << payload.outputSignal << "\n";
+        }
     }
 
     std::cout << "\n";
@@ -62,7 +84,12 @@ void Print(MooreTable& table) {
         auto& col = table.GetColumnByID(from);
         for (const auto& input : rowIDs) {
             const auto& cell = col.column.GetRowByID(input);
-            std::cout << from << " " << cell.toColumnID << " " << input << "\n";
+            if (cell.toColumnID.empty()) continue;
+
+            auto toStates = ParseStateList(cell.toColumnID);
+            for (const auto& toState : toStates) {
+                std::cout << from << " " << toState << " " << input << "\n";
+            }
         }
     }
 }

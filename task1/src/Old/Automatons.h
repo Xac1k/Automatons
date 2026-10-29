@@ -14,8 +14,6 @@ struct AutomatonMoore {
     };
 
     struct Transition {
-        std::string toID;
-
         std::string startID;
         std::string endID;
 

@@ -20,7 +20,7 @@ struct MealyCellPayload {
 
 class MealyTable : public Table<MealyHeaderPayload, MealyCellPayload> {
 public:
-    using OutputSignal = OutputSignal;
+    using OutputSignal = ::OutputSignal;
 };
 
 struct MooreHeaderPayload {
@@ -35,5 +35,5 @@ struct MooreCellPayload {
 
 class MooreTable: public Table<MooreHeaderPayload, MooreCellPayload> {
 public:
-    using OutputSignal = OutputSignal;
+    using OutputSignal = ::OutputSignal;
 };

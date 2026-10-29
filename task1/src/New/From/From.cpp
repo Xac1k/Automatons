@@ -55,6 +55,8 @@ MealyTable From(const AutomatonMealy& automaton) {
 MooreTable From(const AutomatonMoore& automaton) {
     MooreTable table;
 
+    table.SetStartState(automaton.startStateID);
+
     // 1. Собираем множество входных сигналов
     std::set<std::string> signalSet;
     for (const auto& t : automaton.transitions) {
@@ -81,9 +83,8 @@ MooreTable From(const AutomatonMoore& automaton) {
 
             for (const auto& t : automaton.transitions) {
                 if (t.startID == state.stateID && t.signal == signal) {
-                    cell.toColumnID = t.endID;
+                    cell.toColumnID += (found ? "," : "") + t.endID;
                     found = true;
-                    break;
                 }
             }
 
