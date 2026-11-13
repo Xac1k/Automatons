@@ -209,13 +209,13 @@ StateSet CollectUniqueTargetsSetFromState(MooreTable& input, const StateSet& cur
 }
 
 MooreTable DeterminizeMoore(MooreTable input) {
-    auto startState = input.GetStartState();
-    ValidateInputData(input, startState);
+    ValidateInputData(input, input.GetStartState());
     std::set<std::string> alphabetWithoutEmpty = BuildAlphabetWithoutEmpty(input);
     auto redefinitions = BuildRedefinitionMap(input);
+    auto startState = input.GetStartState();
 
     MooreTable output;
-    output.SetStartState(startState);
+    output.SetStartState(redefinitions.contains(startState) ? MakeStateName(redefinitions.at(startState)) : startState);
     std::deque<StateSet> queue;
     std::unordered_set<std::string> created;
     AddInitialStateToQueue(startState, queue, created, redefinitions);
